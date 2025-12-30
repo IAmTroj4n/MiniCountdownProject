@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Year Countdown 2026</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background 1.2s ease;
+            padding: 20px;
+        }
+
+        body.countdown-mode {
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #45B7D1 100%);
+        }
+
+        body.celebration-mode {
+            background: linear-gradient(135deg, #FFD89B 0%, #FF7E5F 50%, #FEB47B 100%);
+        }
+
+        body.post-celebration-mode {
+            background: linear-gradient(135deg, #A8D8EA 0%, #AA96DA 50%, #FCBAD3 100%);
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 30px;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Progress Ring Section */
+        .progress-ring-section {
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .progress-ring-container {
+            position: relative;
+            width: clamp(240px, 50vw, 380px);
+            height: clamp(240px, 50vw, 380px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .progress-ring-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring {
+            stroke: url(#progressGradient);
+            stroke-linecap: round;
+            fill: none;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            transition: stroke-dashoffset 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+        }
+
+        .progress-ring.milestone {
+            animation: ringGlow 0.5s ease-out;
+        }
+
+        /* Quarter Markers */
+        .quarter-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            font-size: 0.7rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.4s ease;
+        }
+
+        .quarter-marker.active {
+            background: #FFD700;
+            border-color: #FFA500;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            transform: scale(1.3);
+        }
+
+        .quarter-label {
+            position: absolute;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s ease;
+        }
+
+        .quarter-label.active {
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            font-size: 0.95rem;
+        }
+
+        /* Center Content */
+        .ring-center {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 80%;
+            height: 80%;
+            z-index: 2;
+        }
+
+        .progress-percentage {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .year-label {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        /* Countdown Grid */
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 12px;
+            margin-bottom: 35px;
+            margin-top: 20px;
+        }
+
+        .time-unit {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: clamp(12px, 3vw, 25px) clamp(8px, 2vw, 15px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .time-unit:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .time-number {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeInOut 0.6s ease;
+        }
+
+        .time-label {
+            font-size: clamp(0.65rem, 1.5vw, 0.9rem);
+            color: rgba(255, 255, 255, 0.85);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        /* Celebration Elements */
+        .celebration-text {
+            display: none;
+            font-size: clamp(2rem, 8vw, 4rem);
+            color: white;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            animation: bounce 1s ease-in-out infinite;
+            margin: 30px 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .celebration-text.active {
+            display: block;
+        }
+
+        /* Controls */
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 215, 0, 0.4);
+            border-color: #FFD700;
+        }
+
+        .sound-icon {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0.5;
+                transform: scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes ringGlow {
+            0% {
+                filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+            }
+            100% {
+                filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .countdown-grid {
+                gap: 10px;
+                grid-template-columns: repeat(2, 1fr);
+                margin-top: 15px;
+            }
+
+            .time-unit {
+                min-height: 100px;
+                padding: 12px 8px;
+            }
+
+            .time-unit:hover {
+                transform: translateY(-2px);
+            }
+
+            h1 {
+                margin-bottom: 10px;
+            }
+
+            .subtitle {
+                margin-bottom: 20px;
+            }
+
+            .progress-ring-section {
+                margin-bottom: 25px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .countdown-grid {
+                gap: 8px;
+            }
+
+            .time-unit {
+                min-height: 90px;
+                padding: 10px 6px;
+            }
+
+            .control-btn {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+            }
+
+            .controls {
+                gap: 10px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body class="countdown-mode">
+    <canvas id="canvas"></canvas>
+    <div class="container">
+        <h1 id="title">✨ New Year Countdown ✨</h1>
+        <p class="subtitle" id="subtitle">Days until 2026</p>
+
+        <!-- Circular Progress Ring -->
+        <div class="progress-ring-section">
+            <div class="progress-ring-container">
+                <div class="progress-ring-background"></div>
+                
+                <svg id="progressSvg" viewBox="0 0 120 120">
+                    <defs>
+                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#4ECDC4;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="progress-ring" cx="60" cy="60" r="55" stroke-width="8"></circle>
+                </svg>
+
+                <!-- Quarter Markers (positioned via JS) -->
+                <div id="markersContainer"></div>
+
+                <!-- Center Content -->
+                <div class="ring-center">
+                    <div class="progress-percentage" id="progressPercentage">0%</div>
+                    <div class="year-label" id="yearLabel">2025 Progress</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown Grid -->
+        <div class="countdown-grid">
+            <div class="time-unit">
+                <span class="time-number" id="days">0</span>
+                <div class="time-label">Days</div>
+            </div>
+            <div class="time-unit">
+                <span class="time-number" id="hours">0</span>
+                <div class="time-label">Hours</div>
+            </div>
+            <div class="time-unit">
+                <span class="time-number" id="minutes">0</span>
+                <div class="time-label">Minutes</div>
+            </div>
+            <div class="time-unit">
+                <span class="time-number" id="seconds">0</span>
+                <div class="time-label">Seconds</div>
+            </div>
+        </div>
+
+        <div class="celebration-text" id="celebrationText">🎉 HAPPY NEW YEAR! 🎉</div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn active" id="soundToggle">
+                <span class="sound-icon">🔊</span>Enable Sound
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ============ DOM Elements ============
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+        const titleEl = document.getElementById('title');
+        const subtitleEl = document.getElementById('subtitle');
+        const celebrationTextEl = document.getElementById('celebrationText');
+        const progressPercentageEl = document.getElementById('progressPercentage');
+        const yearLabelEl = document.getElementById('yearLabel');
+        const progressRingEl = document.querySelector('.progress-ring');
+        const progressSvgEl = document.getElementById('progressSvg');
+        const markersContainer = document.getElementById('markersContainer');
+        const soundToggleBtn = document.getElementById('soundToggle');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const body = document.body;
+
+        // ============ Canvas Setup ============
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // ============ State ============
+        let targetDate = null;
+        let isCelebrating = false;
+        let currentYear = 2025;
+        let particles = [];
+        let soundEnabled = false;
+        let audioContext = null;
+        let activeQuarter = -1;
+
+        // ============ Audio Synthesis ============
+        function initAudioContext() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioContext) return;
+
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            if (type === 'pop') {
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'sparkle') {
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'chime') {
+                osc.frequency.setValueAtTime(1500, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        // ============ Sound Toggle ============
+        soundToggleBtn.addEventListener('click', () => {
+            if (!soundEnabled) {
+                initAudioContext();
+                soundEnabled = true;
+                soundToggleBtn.classList.add('active');
+            } else {
+                soundEnabled = false;
+                soundToggleBtn.classList.remove('active');
+            }
+        });
+
+        // Enable audio on first user interaction
+        document.addEventListener('click', initAudioContext, { once: true });
+        document.addEventListener('keypress', initAudioContext, { once: true });
+
+        // ============ Particle Class ============
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.5) * 10 - 1;
+                this.life = 1;
+                this.decay = Math.random() * 0.012 + 0.012;
+
+                if (type === 'firework') {
+                    this.size = Math.random() * 5 + 2;
+                    this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                } else {
+                    this.size = Math.random() * 6 + 3;
+                    this.color = ['#FFD700', '#FF69B4', '#00CED1', '#FF1493', '#00FF00', '#FF6B6B'][Math.floor(Math.random() * 6)];
+                    this.vy -= 2.5;
+                }
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.08;
+                this.life -= this.decay;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // ============ Initialize Target Date ============
+        function setTargetDate(year) {
+            currentYear = year;
+            targetDate = new Date(year, 0, 1, 0, 0, 0).getTime();
+        }
+
+        setTargetDate(2026);
+
+        // ============ Year Progress Calculation ============
+        function calculateYearProgress() {
+            const now = new Date();
+            const currentYr = now.getFullYear();
+            const yearStart = new Date(currentYr, 0, 1, 0, 0, 0);
+            const yearEnd = new Date(currentYr + 1, 0, 1, 0, 0, 0);
+
+            const totalMsInYear = yearEnd - yearStart;
+            const msElapsed = now - yearStart;
+            const progress = (msElapsed / totalMsInYear) * 100;
+
+            return Math.min(Math.max(progress, 0), 100);
+        }
+
+        // ============ Get Current Quarter ============
+        function getCurrentQuarter() {
+            const now = new Date();
+            const month = now.getMonth();
+            if (month < 3) return 0;
+            if (month < 6) return 1;
+            if (month < 9) return 2;
+            return 3;
+        }
+
+        // ============ Update Progress Ring ============
+        function updateProgressRing() {
+            const progress = calculateYearProgress();
+            const circumference = 2 * Math.PI * 55;
+            const offset = circumference - (progress / 100) * circumference;
+            
+            progressRingEl.style.strokeDashoffset = offset;
+            progressPercentageEl.textContent = Math.round(progress) + '%';
+            yearLabelEl.textContent = new Date().getFullYear() + ' Progress';
+
+            // Update quarter markers
+            updateQuarterMarkers(progress);
+        }
+
+        // ============ Create/Update Quarter Markers ============
+        function createQuarterMarkers() {
+            markersContainer.innerHTML = '';
+            const quarters = [
+                { label: 'Q1', percent: 0 },
+                { label: 'Q2', percent: 25 },
+                { label: 'Q3', percent: 50 },
+                { label: 'Q4', percent: 75 }
+            ];
+
+            quarters.forEach((q, idx) => {
+                const angle = (q.percent / 100) * 360 - 90;
+                const rad = (angle * Math.PI) / 180;
+                const radius = 85;
+                const cx = 120 / 2;
+                const cy = 120 / 2;
+                const x = cx + radius * Math.cos(rad);
+                const y = cy + radius * Math.sin(rad);
+
+                const marker = document.createElement('div');
+                marker.className = 'quarter-marker';
+                marker.id = `quarter-${idx}`;
+                marker.style.left = `calc(50% + ${x - cx}px - 6px)`;
+                marker.style.top = `calc(50% + ${y - cy}px - 6px)`;
+                markersContainer.appendChild(marker);
+
+                const label = document.createElement('div');
+                label.className = 'quarter-label';
+                label.id = `label-${idx}`;
+                label.textContent = q.label;
+                const labelRadius = 110;
+                const labelX = cx + labelRadius * Math.cos(rad);
+                const labelY = cy + labelRadius * Math.sin(rad);
+                label.style.left = `calc(50% + ${labelX - cx}px)`;
+                label.style.top = `calc(50% + ${labelY - cy}px)`;
+                markersContainer.appendChild(label);
+            });
+        }
+
+        // ============ Update Quarter Marker Visibility ============
+        function updateQuarterMarkers(progress) {
+            const newQuarter = getCurrentQuarter();
+            
+            if (newQuarter !== activeQuarter) {
+                if (activeQuarter >= 0) {
+                    const oldMarker = document.getElementById(`quarter-${activeQuarter}`);
+                    const oldLabel = document.getElementById(`label-${activeQuarter}`);
+                    if (oldMarker) oldMarker.classList.remove('active');
+                    if (oldLabel) oldLabel.classList.remove('active');
+                }
+
+                activeQuarter = newQuarter;
+                const newMarker = document.getElementById(`quarter-${newQuarter}`);
+                const newLabel = document.getElementById(`label-${newQuarter}`);
+                if (newMarker) newMarker.classList.add('active');
+                if (newLabel) newLabel.classList.add('active');
+
+                playSound('chime');
+            }
+        }
+
+        // ============ Calculate Time Remaining ============
+        function calculateTimeRemaining() {
+            const now = new Date().getTime();
+            const difference = targetDate - now;
+
+            if (difference <= 0) {
+                return { days: 0, hours: 0, minutes: 0, seconds: 0, reached: true };
+            }
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((difference / 1000 / 60) % 60);
+            const seconds = Math.floor((difference / 1000) % 60);
+
+            return { days, hours, minutes, seconds, reached: false };
+        }
+
+        // ============ Update Countdown Display ============
+        function updateCountdown() {
+            const time = calculateTimeRemaining();
+
+            if (time.reached && !isCelebrating) {
+                startCelebration();
+                return;
+            }
+
+            daysEl.textContent = String(time.days).padStart(2, '0');
+            hoursEl.textContent = String(time.hours).padStart(2, '0');
+            minutesEl.textContent = String(time.minutes).padStart(2, '0');
+            secondsEl.textContent = String(time.seconds).padStart(2, '0');
+
+            updateProgressRing();
+        }
+
+        // ============ Create Explosion ============
+        function createExplosion(x, y, count, type) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, type));
+            }
+        }
+
+        // ============ Animate Particles (requestAnimationFrame) ============
+        let animationId = null;
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw(ctx);
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            if (particles.length > 0) {
+                animationId = requestAnimationFrame(animateParticles);
+            } else {
+                animationId = null;
+            }
+        }
+
+        // ============ Start Celebration ============
+        function startCelebration() {
+            isCelebrating = true;
+            celebrationTextEl.classList.add('active');
+
+            body.classList.remove('countdown-mode');
+            body.classList.add('celebration-mode');
+
+            // Trigger multiple firework bursts
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height * 0.6;
+                    createExplosion(x, y, 25, 'firework');
+                    createExplosion(x, y, 15, 'confetti');
+                    playSound('pop');
+                }, i * 350);
+            }
+
+            animateParticles();
+
+            setTimeout(() => {
+                resetToNextYear();
+            }, 10000);
+        }
+
+        // ============ Reset to Next Year ============
+        function resetToNextYear() {
+            isCelebrating = false;
+            celebrationTextEl.classList.remove('active');
+
+            setTargetDate(currentYear + 1);
+            titleEl.textContent = `New Year Countdown`;
+            subtitleEl.textContent = `Days until ${currentYear + 1}`;
+
+            // Highlight progress ring
+            progressRingEl.classList.add('milestone');
+            setTimeout(() => {
+                progressRingEl.classList.remove('milestone');
+            }, 600);
+
+            body.classList.remove('celebration-mode');
+            body.classList.add('post-celebration-mode');
+
+            particles = [];
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Reset quarter markers for new year
+            activeQuarter = -1;
+            createQuarterMarkers();
+            updateCountdown();
+        }
+
+        // ============ Initialize ============
+        createQuarterMarkers();
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
